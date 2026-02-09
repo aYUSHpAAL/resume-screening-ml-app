@@ -1,0 +1,126 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Resume Screening App</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="dark-toggle">
+        <input type="checkbox" id="darkMode" onclick="toggleDark()">
+        <label for="darkMode">🌙 Dark Mode</label>
+    </div>
+
+    <h1>
+        <i class="fa-solid fa-file-lines"></i>
+        Resume Screening
+    </h1>
+
+    <form method="POST" enctype="multipart/form-data" onsubmit="showLoader()">
+
+        <div class="upload-box">
+            <p>Upload your resume (PDF)</p>
+
+            <input type="file" id="resumeFile" name="resume_file" accept=".pdf" hidden required>
+
+            <label for="resumeFile" class="file-btn">
+                <i class="fa-solid fa-file-arrow-up"></i>
+                Choose Resume
+            </label>
+
+            <span id="fileName">No file chosen</span>
+        </div>
+
+        <div id="pdfPreview" class="pdf-preview hidden">
+            <h4>PDF Preview</h4>
+            <iframe id="pdfFrame"></iframe>
+        </div>
+
+        <button type="submit">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Upload & Predict
+        </button>
+    </form>
+
+    <div id="loader" class="loader hidden"></div>
+
+    {% if result %}
+        <div class="result">
+            <p><strong>Predicted Category:</strong> {{ result }}</p>
+
+            <p class="confidence
+            {% if confidence >= 60 %}high-confidence
+            {% elif confidence >= 40 %}medium-confidence
+            {% else %}low-confidence
+            {% endif %}
+            ">
+                Confidence: {{ confidence }}%
+            </p>
+
+            {% if top_predictions %}
+                <div class="top-preds">
+                    <h4>Top 3 Predictions</h4>
+                    <ul>
+                        {% for item in top_predictions %}
+                            <li>{{ item.category }} — {{ item.probability }}%</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+
+</div>
+
+<script>
+function showLoader() {
+    document.getElementById("loader").classList.remove("hidden");
+}
+
+function toggleDark() {
+    document.body.classList.toggle("dark");
+    localStorage.setItem(
+        "darkMode",
+        document.body.classList.contains("dark") ? "on" : "off"
+    );
+}
+
+window.onload = function () {
+    if (localStorage.getItem("darkMode") === "on") {
+        document.body.classList.add("dark");
+        document.getElementById("darkMode").checked = true;
+    }
+};
+
+document.getElementById("resumeFile").addEventListener("change", function () {
+    const file = this.files[0];
+    document.getElementById("fileName").textContent =
+        file ? file.name : "No file chosen";
+
+    if (file && file.type === "application/pdf") {
+        document.getElementById("pdfFrame").src = URL.createObjectURL(file);
+        document.getElementById("pdfPreview").classList.remove("hidden");
+    }
+});
+
+{% if confidence and confidence >= 60 %}
+confetti({
+    particleCount: 120,
+    spread: 70,
+    origin: { y: 0.2 }
+});
+{% endif %}
+</script>
+
+</body>
+</html>
